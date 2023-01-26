@@ -1,15 +1,13 @@
 require("express-async-errors");
 require("dotenv").config();
-
 const express = require("express");
 
 const app = express();
 
 const port = process.env.PORT || 5000;
 
-const productsRouter = require("./routes/products.js");
-
 const notFoundMiddleware = require("./middleware/not-found.js");
+const productsRouter = require("./routes/products.js");
 
 const errorHandlerMiddleware = require("./middleware/error-handler.js");
 
