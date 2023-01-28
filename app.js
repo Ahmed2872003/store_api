@@ -29,7 +29,6 @@ app.use(errorHandlerMiddleware);
 // connectDB
 const start = async () => {
   await connectDB(process.env.MONGO_URI);
-  console.log("Connected to the database");
   app.listen(port, () => console.log(`API is listening on port: ${port}...`));
 };
 

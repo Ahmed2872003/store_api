@@ -1,23 +1,43 @@
+const { query } = require("express");
 const product = require("../models/product.js");
-
-const getAllProductsStatic = async (req, res) => {
-  const products = await product
-    .find({})
-    .sort("name")
-    .select("price name")
-    .limit("5")
-    .skip("5");
-  res.status(200).json({ products, nHits: products.length });
-};
+const { parse } = require("dotenv");
 
 const getAllProducts = async (req, res) => {
-  const { featured, company, name, sort = "", fields = "" } = req.query;
+  const {
+    featured,
+    company,
+    name,
+    sort = "",
+    fields = "",
+    numericFilters = "",
+  } = req.query;
   const queryObj = {};
   // filter by properties
   if (featured) queryObj.featured = featured;
   if (company) queryObj.company = { $regex: company, $options: "i" };
   if (name) queryObj.name = { $regex: name, $options: "i" };
+  if (numericFilters) {
+    const operatorToquery = {
+      ">": "$gt",
+      "<": "$lt",
+      ">=": "$gte",
+      "<=": "$lte",
+      "=": "$eq",
+      "!=": "$ne",
+    };
+    const options = ["price", "rating"];
 
+    numericFilters
+      .replace(/(>=?|<=?|!?=)|\s+/g, (match) =>
+        match.includes(" ") ? "" : ` ${operatorToquery[match]} `
+      )
+      .split(",")
+      .forEach((filter) => {
+        const [field, operator, value] = filter.split(" ");
+        if (options.includes(field))
+          queryObj[field] = { [operator]: Number(value) };
+      });
+  }
   // distribute in pages
   const page = +req.query.page || 1;
   const limit = +req.query.limit || 10;
@@ -25,7 +45,7 @@ const getAllProducts = async (req, res) => {
 
   let products = await product
     .find(queryObj)
-    .sort(sort.replaceAll(",", " ") || "-createdAt")
+    .sort(sort.replaceAll(",", " ") || "-createdAt -_id")
     .select(fields.replaceAll(",", " "))
     .skip(skip)
     .limit(limit);
@@ -34,6 +54,5 @@ const getAllProducts = async (req, res) => {
 };
 
 module.exports = {
-  getAllProductsStatic,
   getAllProducts,
 };
